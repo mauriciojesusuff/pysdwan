@@ -10,38 +10,28 @@ debug = True
 
 # variaiveis globais de configurações
 operators = [
-    {'name': 'Ola Telecom',     'address' : '131.0.119.246',        'address_list' : 'servicos-link-out-ollatelecom'},
-    {'name': 'Oi Fibra',        'address' : '192.168.64.243',       'address_list' : 'servicos-link-out-oifibra'},
-    {'name': 'Onda Agil',       'address' : '10.1.1.3',             'address_list' : 'servicos-link-out-ondaagil'},
-    {'name': 'Vivo Fibra',      'address' : '192.168.67.14',        'address_list' : 'servicos-link-out-vivofibra'},
-    {'name': 'Junto Telecom',   'address' : '10.48.2.250',          'address_list' : 'servicos-link-out-juntotelecom'},
-    {'name': 'Satelite',        'address' : '201.32.177.202',       'address_list' : 'servicos-link-out-satelite'},
-    {'name': 'RNP',             'address' : '200.129.130.170',      'address_list' : 'servicos-link-out-rnp'},
+    {'name': 'provedor 1',     'address' : 'xxx.xxx.xxx.xxx',        'address_list' : 'servicos-link-out-provedor1'},
+    {'name': 'provedor 2',     'address' : 'yyy.yyy.yyy.yyy',        'address_list' : 'servicos-link-out-provedor2'},
             ]
 
 #Lista de conexões do firewall
 address_list = [
-    {'name' : 'servicos-link-out-juntotelecom', 'address' : []},
-    {'name' : 'servicos-link-out-oifibra', 'address' : []},
-    {'name' : 'servicos-link-out-ollatelecom', 'address' : []},
-    {'name' : 'servicos-link-out-ondaagil', 'address' : []},
-    {'name' : 'servicos-link-out-rnp', 'address' : []},
-    {'name' : 'servicos-link-out-satelite', 'address' : []},
-    {'name' : 'servicos-link-out-vivofibra', 'address' : []},
+    {'name' : 'servicos-link-out-provedor1', 'address' : []},
+    {'name' : 'servicos-link-out-provedor2', 'address' : []},
 ]
 
 #ips que não serão manipulados.
-black_list = ['131.0.119.246', '192.168.64.243', '10.1.1.3', '192.168.67.14', '10.48.2.250', '201.32.177.202', '200.129.130.170', 'fast.com']
+black_list = [ '192.168.64.243', '10.1.1.3', '192.168.67.14', '10.48.2.250', 'fast.com']
 
 #Variavel global que salva os ips validos da conexão do firewall
 valide_ips = []
 
 #Instancia da conexão da RouterBoard Mikrotik
 print('\n>> Efetuando login...')
-router = ros_api.Api('131.0.119.246', user='api', password='Flug@1701#')
+router = ros_api.Api('10.10.10.1', user='api', password='aaaxxxaaaxxx')
 print('\n>> Conexão estabelecida...\n')
 
-# teste = router.talk('/ip/firewall/address-list/add =address=192.1.1.1 =list=servicos-link-out-juntotelecom')
+# teste = router.talk('/ip/firewall/address-list/add =address=192.1.1.1 =list=servicos-link-out-provedor1')
 # teste = router.talk('/ip/firewall/address-list/print')
 # print(teste)
 # breakpoint()
