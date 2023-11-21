@@ -3,6 +3,7 @@ import json
 import re
 import datetime
 import os
+import sys
 
 class Tools():
     #Verifica se um endereço IP é privado ou público.
@@ -71,7 +72,38 @@ class Tools():
         else:
             if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} não foi possivel executar o teste.')
 
+    def get_block_ip(self, address, mask):
+        try:
+            if self.if_ip_address(address):
+                # Cria um objeto de rede com o IP e a máscara de sub-rede
+                rede = ipaddress.IPv4Network(f"{address}/{mask}", strict=False)
+                return rede
+        except ValueError as e:
+            print(f"Erro ao criar objeto de rede: {e}")
+            sys.exit()
+
+    def clear_address_with_mask(self, address):
+        if '/' in address:
+            return address.split('/')[0]
+        return address
+
     def get_datetime_now(self):
         data_hora_atual = datetime.datetime.now()
         formato_personalizado = "%Y-%m-%d %H:%M:%S"
         return data_hora_atual.strftime(formato_personalizado)
+
+    def if_ip_address(self, ip):
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    def inside_block_address(self, block, address):
+        try:
+            endereco_ip = ipaddress.ip_address(address)
+            rede = ipaddress.ip_network(block, strict=False)
+            return endereco_ip in rede
+
+        except ValueError as e:
+            return False
