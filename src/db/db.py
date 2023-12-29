@@ -57,21 +57,22 @@ class Database():
 
         if isinstance(latency, int):
             try:
-                connection = self.openConnection()
-                cursor = connection.cursor()
+                if(self.connect.is_connected() == False):
+                    connection = self.openConnection()
+
+
+                cursor = self.connect.cursor()
 
                 sql = 'INSERT INTO ping (list_name, gatewey, address, latency) VALUES (%s, %s, %s, %s)'
                 values = (list_name, gateway, address, latency)
                 cursor.execute(sql, values)
 
-                connection.commit()
-
+                self.connect.commit()
                 cursor.close()
+
             except mysql.connector.Error as err:
                 print("Something went wrong: {}".format(err))
-            finally:
-                if connection.is_connected():
-                    connection.close()
+
 
     def create_table(self):
         self.openConnection()
@@ -81,7 +82,6 @@ class Database():
         cursor.execute('CREATE TABLE IF NOT EXISTS `' + self.database + '`.`ping` (`id` INT(10) NOT NULL AUTO_INCREMENT , `list_name` VARCHAR(75) NOT NULL , `gatewey` VARCHAR(15) NOT NULL , `address` VARCHAR(15) NOT NULL , `latency` INT(10) NOT NULL , `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;')
 
         cursor.close()
-        self.connect.close()
 
     def close_all_connection(self):
         self.connect.close()
