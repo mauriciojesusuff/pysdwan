@@ -120,7 +120,9 @@ while True:
             #Adiciona na lista os testes fetios.
             latancy_test.append({'operator' : operator['name'], 'latency' : ping, 'list_name' : operator['list_name'], 'network': network, 'address' : network.address})
 
-            threading.Thread(target=db.insert_ping_test, args=(operator['list_name'], operator['gatewey'], network.address, ping)).start()
+            t = threading.Thread(target=db.insert_ping_test, args=(operator['list_name'], operator['gatewey'], network.address, ping))
+            t.start()
+            t.join()
         
         #Pega o melhor teste feito.
         best = tools.get_best_latency(latency_test=latancy_test, debug=debug, index=index, total=len(list_block_address))
@@ -152,7 +154,9 @@ while True:
 
                 mikrotik.remove_ip_in_address_list(address_list['.id'])
 
-                threading.Thread(target=db.insert_manipulation, args=("REMOVED", best['address'], None, network.list_name)).start()
+                t = threading.Thread(target=db.insert_manipulation, args=("REMOVED", best['address'], None, network.list_name))
+                t.start()
+                t.join()
 
                 print(f'[DEBUG] Adicionado o bloco ip {address_with_mask} na lista {best_list_name}\n')
 
@@ -160,13 +164,17 @@ while True:
                 network.list_name = best_list_name
 
                 modifier = True
-                threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
+                t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
+                t.start()
+                t.join()
                 continue
 
         if not modifier:
             print(f'[DEBUG] Adicionado o bloco ip {network.network} na lista {best_list_name}\n')
             mikrotik.add_ip_in_address_list(str(network.network), best_list_name)
-            threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
+            t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
+            t.start()
+            t.join()
 
     print(f'Manipulações concluídas. Recomençando em {configs["await_time"]} segundos.')
     time.sleep(configs['await_time'])
