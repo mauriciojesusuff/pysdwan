@@ -12,13 +12,13 @@ class Mikrotik():
             print('[ERRO] - Não foi possivel efetuar o login no equipamento.')
             print('[ERRO] - Mensagem de erro: ', ex)
 
-    #Pegar todos os ips já registrados nas listas.
-    def get_address_list(self)-> []:
-        return self.exeCom('/ip/firewall/address-list/print')
-
     #Pegar todos os ips em conexão no momento.
     def get_connection_address(self) -> []:
         return self.exeCom('/ip/firewall/connection/print')
+
+    #Pegar todos os ips já registrados nas listas.
+    def get_address_list(self)-> []:
+        return self.exeCom('/ip/firewall/address-list/print')
 
     #Adicionar um ip em uma lista especifica.
     def add_ip_in_address_list(self, address : str, list_name: str) -> any:
