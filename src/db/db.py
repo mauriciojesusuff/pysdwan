@@ -56,17 +56,22 @@ class Database():
     def insert_ping_test(self, list_name, gateway, address, latency):
 
         if isinstance(latency, int):
-            connection = self.openConnection()
-            cursor = connection.cursor()
+            try:
+                connection = self.openConnection()
+                cursor = connection.cursor()
 
-            sql = 'INSERT INTO ping (list_name, gatewey, address, latency) VALUES (%s, %s, %s, %s)'
-            values = (list_name, gateway, address, latency)
-            cursor.execute(sql, values)
+                sql = 'INSERT INTO ping (list_name, gatewey, address, latency) VALUES (%s, %s, %s, %s)'
+                values = (list_name, gateway, address, latency)
+                cursor.execute(sql, values)
 
-            connection.commit()
+                connection.commit()
 
-            cursor.close()
-            connection.close()
+                cursor.close()
+            except mysql.connector.Error as err:
+                print("Something went wrong: {}".format(err))
+            finally:
+                if connection.is_connected():
+                    connection.close()
 
     def create_table(self):
         self.openConnection()
