@@ -28,18 +28,20 @@ class Database():
 
 
     def insert_manipulation(self, action, address, lantecy, operator):
-        mysql = self.openConnection()
-        cursor = self.connect.cursor()
+        try:
+            if(self.connect.is_connected() == False):
+                    self.openConnection()
 
-        sql = 'INSERT INTO manipulation (action, address, latency, operator) VALUES (%s, %s, %s, %s)'
-        values = (action, address, lantecy, operator)
-        cursor.execute(sql, values)
+            cursor = self.connect.cursor()
 
-        mysql.commit()
+            sql = 'INSERT INTO manipulation (action, address, latency, operator) VALUES (%s, %s, %s, %s)'
+            values = (action, address, lantecy, operator)
+            cursor.execute(sql, values)
 
-        cursor.close()
-        self.connect.close()
-
+            self.connect.commit()
+            cursor.close()
+        except mysql.connector.Error as err:
+                print("Something went wrong: {}".format(err))
 
     def select(self, limit: int = 50, oderBy: str = 'ASC', ) -> [] :
         connection = self.openConnection()
