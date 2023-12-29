@@ -120,7 +120,7 @@ while True:
             #Adiciona na lista os testes fetios.
             latancy_test.append({'operator' : operator['name'], 'latency' : ping, 'list_name' : operator['list_name'], 'network': network, 'address' : network.address})
 
-            threading.Thread(target=db.insert_ping_test, args=(operadora['list_name'], operadora['gatewey'], address, ping)).start()
+            threading.Thread(target=db.insert_ping_test, args=(operator['list_name'], operator['gatewey'], address, ping)).start()
         
         #Pega o melhor teste feito.
         best = tools.get_best_latency(latency_test=latancy_test, debug=debug, index=index, total=len(list_block_address))
