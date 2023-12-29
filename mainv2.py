@@ -120,7 +120,7 @@ while True:
             #Adiciona na lista os testes fetios.
             latancy_test.append({'operator' : operator['name'], 'latency' : ping, 'list_name' : operator['list_name'], 'network': network, 'address' : network.address})
 
-            threading.Thread(target=db.insert_ping_test, args=(operator['list_name'], operator['gatewey'], address, ping)).start()
+            threading.Thread(target=db.insert_ping_test, args=(operator['list_name'], operator['gatewey'], network.address, ping)).start()
         
         #Pega o melhor teste feito.
         best = tools.get_best_latency(latency_test=latancy_test, debug=debug, index=index, total=len(list_block_address))
@@ -160,13 +160,13 @@ while True:
                 network.list_name = best_list_name
 
                 modifier = True
-                hreading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
+                threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
                 continue
 
         if not modifier:
             print(f'[DEBUG] Adicionado o bloco ip {network.network} na lista {best_list_name}\n')
             mikrotik.add_ip_in_address_list(str(network.network), best_list_name)
-            hreading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
+            threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name)).start()
 
     print(f'Manipulações concluídas. Recomençando em {configs["await_time"]} segundos.')
     time.sleep(configs['await_time'])
