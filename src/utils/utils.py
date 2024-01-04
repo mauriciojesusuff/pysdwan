@@ -70,7 +70,7 @@ class Tools():
             if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} está com a melhor latência em {best_operator["list_name"]}. ({index}/{total})')
             return best_operator
         else:
-            if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} não foi possivel executar o teste.')
+            if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} não foi possivel executar o teste. ({index}/{total})')
 
     def get_block_ip(self, address, mask):
         try:

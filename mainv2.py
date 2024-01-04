@@ -64,7 +64,7 @@ while True:
     #Pegar os ips no firewall connection
     connections = mikrotik.get_connection_address()
 
-    #Verificar endereço por enderço
+    #Verificar endereço por endere
     for conn in connections:
 
         #Normalizar o endereço IP
@@ -102,14 +102,21 @@ while True:
             list_block_address.append(NetworkAddress(network=address_with_mask, address=address_cleared, addresses=[address_cleared]))
 
     index = 0
+    addresses_lists = mikrotik.get_address_list()
+    total_address = 0
+
+    for network in list_block_address:
+        if network.address is not None:
+            total_address += 1
+    
     for network in list_block_address:
 
         #Valida se o valor do campo address não é vazio.
         if network.address == None: continue
 
         latancy_test = []
-        index+=1
 
+        index+=1
         #Começa a executar os tentes entre as operadoras configuradas.
         for operator in operators:
 
@@ -125,14 +132,12 @@ while True:
             t.join()
         
         #Pega o melhor teste feito.
-        best = tools.get_best_latency(latency_test=latancy_test, debug=debug, index=index, total=len(list_block_address))
+        best = tools.get_best_latency(latency_test=latancy_test, debug=debug, index=index, total=total_address)
         
         if best == None: continue
 
         best_list_name = best['list_name']
         network = best['network']
-
-        addresses_lists = mikrotik.get_address_list()
         
         modifier = False
         for address_list in addresses_lists:
@@ -164,9 +169,11 @@ while True:
                 network.list_name = best_list_name
 
                 modifier = True
+
                 t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
                 t.start()
                 t.join()
+
                 continue
 
         if not modifier:
@@ -175,6 +182,7 @@ while True:
             t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
             t.start()
             t.join()
+
 
     print(f'Manipulações concluídas. Recomençando em {configs["await_time"]} segundos.')
     time.sleep(configs['await_time'])
