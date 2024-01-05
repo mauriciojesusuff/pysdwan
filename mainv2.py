@@ -138,8 +138,6 @@ while True:
 
         best_list_name = best['list_name']
         network = best['network']
-        network.operator = best['operator']
-
         modifier = False
         for address_list in addresses_lists:
 
@@ -160,27 +158,27 @@ while True:
 
                 mikrotik.remove_ip_in_address_list(address_list['.id'])
 
-                t = threading.Thread(target=db.insert_manipulation, args=("REMOVED", best['address'], None, network.operator))
+                t = threading.Thread(target=db.insert_manipulation, args=("REMOVED", best['address'], None, network.list_name))
                 t.start()
                 t.join()
 
                 print(f'[DEBUG] Adicionado o bloco ip {address_with_mask} na lista {best_list_name}\n')
 
                 mikrotik.add_ip_in_address_list(str(address_with_mask), best_list_name)
-                network.list_name = best_list_name
-
                 modifier = True
 
-                t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.operator))
+                network.list_name = best_list_name
+
+                t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], best_list_name))
                 t.start()
                 t.join()
 
                 continue
 
         if not modifier:
-            print(f'[DEBUG] Adicionado o bloco ip {network.network} na lista {best_list_name}\n')
+            print(f'[DEBUG] Adicionado diretamente o bloco ip {network.network} na lista {best_list_name}\n')
             mikrotik.add_ip_in_address_list(str(network.network), best_list_name)
-            t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.operator))
+            t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], best_list_name))
             t.start()
             t.join()
 
