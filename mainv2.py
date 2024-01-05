@@ -170,7 +170,7 @@ while True:
 
                 modifier = True
 
-                t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
+                t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], best_list_name))
                 t.start()
                 t.join()
 
@@ -179,7 +179,7 @@ while True:
         if not modifier:
             print(f'[DEBUG] Adicionado o bloco ip {network.network} na lista {best_list_name}\n')
             mikrotik.add_ip_in_address_list(str(network.network), best_list_name)
-            t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], network.list_name))
+            t = threading.Thread(target=db.insert_manipulation, args=("ADDED", best['address'], best['latency'], best_list_name))
             t.start()
             t.join()
 
