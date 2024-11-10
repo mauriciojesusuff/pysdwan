@@ -5,7 +5,7 @@ class Mikrotik():
     def __init__(self, ip, user, password, port = 8728):
         print('[LOGIN] - Efetuando login\n')
         try:
-            self.connection = ros_api.Api(ip, user=user, password=password, port=port, timeout=100)
+            self.connection = ros_api.Api(ip, user=user, password=password, port=port)
 
             print('[LOGIN] - Login efetuado com sucesso.\n')
         except Exception as ex:

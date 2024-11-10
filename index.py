@@ -3,55 +3,80 @@ from src.api.mikrotik import Mikrotik
 from src.utils.utils import Tools
 from src.db.db import Database
 
-
 from dotenv import load_dotenv
 import os
-
 import time
 import threading
 from typing import List
 
+# Importar módulos de logging
+import logging
+from logging.handlers import RotatingFileHandler
+
 # Carregar as variáveis do arquivo .env para o ambiente
 load_dotenv()
 
+# Configurar o logging
+logging.basicConfig(level=logging.INFO)
+
+# Criar um handler com um limite de aproximadamente 1k linhas
+handler = RotatingFileHandler('app.log', maxBytes=100000, backupCount=1)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.addHandler(handler)
 
 tools = Tools()
 geoIp2 = Geoip2()
 
 configs = tools.read_configuration('config.json')
-mikrotik = Mikrotik(ip=os.getenv("MK_ADDRESS"), user=os.getenv('MK_USERNAME'), password=os.getenv('MK_PASSWORD'), port=os.getenv('MK_PORT'))
+mikrotik = Mikrotik(
+    ip=os.getenv("MK_ADDRESS"),
+    user=os.getenv('MK_USERNAME'),
+    password=os.getenv('MK_PASSWORD'),
+    port=os.getenv('MK_PORT')
+)
 
 operators = configs['operadoras']
 black_list = configs['black_list']
 
-db = Database(database=configs['mysql_db'], host=configs['mysql_host'], passwd=configs['mysql_passwd'], port=configs['mysql_port'], user=configs['mysql_user'])
-
-
+db = Database(
+    database=os.getenv('MYSQL_DB'),
+    host=os.getenv('MYSQL_HOST'),
+    passwd=os.getenv('MYSQL_PASSW'),
+    port=os.getenv('MYSQL_PORT'),
+    user=os.getenv('MYSQL_USER')
+)
 
 start_time = time.time()
+logger.info("Script iniciado.")
 
-#limpa os dados atuais da tabela da lista de isp do firewall
+# Limpa os dados atuais da tabela da lista de ISP do firewall
 db.clear_current_address_list()
+logger.info("Lista de endereços atual no banco de dados foi limpa.")
 
 list_address_mapped = [operadora["list_name"] for operadora in operators]
 
-#Pegar todas as firewall/address-list
+# Pegar todas as firewall/address-list
 address_list = mikrotik.get_address_list(list_address_mapped)
+logger.info("Lista de endereços obtida do Mikrotik.")
 
 db.insert_curruent_address_list(address_list)
+logger.info("Lista de endereços atual inserida no banco de dados.")
 
-#Pegar todos os ips do firewall/connections
+# Pegar todos os IPs do firewall/connections
 connections_address = mikrotik.get_connection_address()
+logger.info("Endereços de conexão obtidos do Mikrotik.")
 
-#Abrir a sessão com bd local;
+# Abrir a sessão com banco de dados local
 geoIp2.open()
+logger.info("Sessão GeoIP2 aberta.")
 
 # Conjunto para armazenar os blocos IP já vistos
 seen_ip_blocks = {}
 
 index = 0
 for address_info in connections_address:
-
     # Extrair o endereço IP (removendo a porta, se houver)
     address = address_info['dst-address'].split(':')[0]
 
@@ -70,7 +95,7 @@ for address_info in connections_address:
         # Obter o bloco IP do endereço
         ip_block = geoIp2.getIpBlock(address)
     except Exception as e:
-        print(f"Erro ao obter o bloco IP para {address}: {e}")
+        logger.error(f"Erro ao obter o bloco IP para {address}: {e}")
         continue
 
     # Converter o bloco IP para string
@@ -85,8 +110,9 @@ for address_info in connections_address:
 
 # Fechar a sessão com o banco de dados local
 geoIp2.close()
+logger.info("Sessão GeoIP2 fechada.")
 
-print(f"Total de blocos IP únicos processados: {len(seen_ip_blocks)} em {time.time() - start_time} segundos")
+logger.info(f"Total de blocos IP únicos processados: {len(seen_ip_blocks)} em {time.time() - start_time} segundos")
 
 total_blocks = len(seen_ip_blocks)
 
@@ -94,7 +120,6 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
     latency_tests = []
 
     for operator in operators:
-
         gateway = operator.get('gateway')
         list_name = operator.get('list_name')
         operator_name = operator.get('name')
@@ -127,15 +152,15 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
 
     # Verificar se 'best' é None ou vazio
     if best is None:
-        print("Erro: get_best_latency retornou None.")
+        logger.error("Erro: get_best_latency retornou None.")
         continue
 
     # Verificar o valor específico de 'network' em 'best'
     if best.get('network') is None:
-        print("Aviso: best['network'] é None, pulando este item.")
+        logger.warning("Aviso: best['network'] é None, pulando este item.")
         continue
 
-    print(f"{best['network']} - {best['address']} - {best['latency']}ms - {best['operator']}")
+    logger.info(f"{best['network']} - {best['address']} - {best['latency']}ms - {best['operator']}")
 
     result = db.get_list_name_to_current_address_list(best['network'])
 
@@ -145,10 +170,8 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
     ping = best.get('latency')
 
     if result is None:
-
         mikrotik.add_ip_in_address_list(address=network, list_name=list_name)
-
-        print(f"Nova rota adicionada, {best['network']} - {list_name}\n")
+        logger.info(f"Nova rota adicionada: {best['network']} - {list_name}")
 
         db.insert_one_current_address_list(best)
 
@@ -156,14 +179,10 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         t.start()
         t.join()
 
-
-
     elif result['list_name'] != list_name:
-
         address_list = mikrotik.get_address_list_by_address(address=network)
 
         mikrotik.remove_ip_in_address_list(address_list[0]['.id'])
-
         mikrotik.add_ip_in_address_list(address=network, list_name=list_name)
 
         db.update_current_address_list(best)
@@ -172,5 +191,4 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         t.start()
         t.join()
 
-        print(f"{best['network']} trocado de rota para {list_name}.\n")
-        
+        logger.info(f"Rota de {best['network']} trocada para {list_name}.")
