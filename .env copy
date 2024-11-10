@@ -1,0 +1,15 @@
+#Login de acesso a api do MK
+MK_ADDRESS=0.0.0.0
+MK_USERNAME=user
+MK_PASSWORD=senha
+MK_PORT=8728
+
+#Conexão de acesso ao banco de dados mysql
+MYSQL_HOST= mysql
+MYSQL_PORT= 3306
+MYSQL_USER= root
+MYSQL_PASSW= 123
+MYSQL_DB=db_name
+
+#Api key Geoip2
+GEOIP2_KEY=

@@ -1,7 +1,6 @@
 import ipaddress
 import json
 import re
-import datetime
 import os
 import sys
 
@@ -66,11 +65,7 @@ class Tools():
     def get_best_latency(self, latency_test : [],index, total, debug):
         best_operator = sorted(latency_test, key=self.get_ms)[0]
 
-        if str(best_operator['latency']).isdigit():
-            if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} está com a melhor latência em {best_operator["list_name"]}. ({index}/{total})')
-            return best_operator
-        else:
-            if debug : print(f'[DEBUG {self.get_datetime_now()}] - O endereco {best_operator["address"]} não foi possivel executar o teste. ({index}/{total})')
+        return best_operator
 
     def get_block_ip(self, address, mask):
         try:
@@ -82,15 +77,13 @@ class Tools():
             print(f"Erro ao criar objeto de rede: {e}")
             sys.exit()
 
-    def clear_address_with_mask(self, address):
-        if '/' in address:
-            return address.split('/')[0]
-        return address
-
-    def get_datetime_now(self):
-        data_hora_atual = datetime.datetime.now()
-        formato_personalizado = "%Y-%m-%d %H:%M:%S"
-        return data_hora_atual.strftime(formato_personalizado)
+    def clear_address_with_mask(self, address):            
+        ip = ipaddress.ip_address(ip)
+        for block in blacklist:
+            network = ipaddress.ip_network(block)
+            if ip in network:
+                return True  # O IP está na blacklist
+        return False  # O IP não está na blacklistato_personalizado)
 
     def if_ip_address(self, ip):
         try:
@@ -107,3 +100,40 @@ class Tools():
 
         except ValueError as e:
             return False
+        
+    def is_valid_ip(self, ip: str) -> bool:
+        try:
+            # Tenta criar um objeto IP. Se falhar, o IP é inválido.
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+        
+    def is_ip_in_blacklist(self, ip, blacklist):
+        """
+        Verifica se um endereço IP está em uma lista de blocos de IPs (blacklist).
+        
+        Parâmetros:
+        - ip (str): O endereço IP a ser verificado, no formato "x.x.x.x".
+        - blacklist (list): Lista de blocos de IPs em formato CIDR, por exemplo, ["200.129.130.128/26", "131.0.119.224/27"].
+        
+        Retorna:
+        - bool: True se o IP estiver em algum dos blocos na blacklist, False caso contrário.
+        """
+        # Converte o IP para o tipo ipaddress.IPv4Address
+        ip_obj = ipaddress.ip_address(ip)
+        
+        # Itera sobre cada bloco na blacklist
+        for cidr_block in blacklist:
+            try:
+                # Converte o bloco CIDR para o tipo ipaddress.IPv4Network, desativando o modo estrito
+                network = ipaddress.ip_network(cidr_block, strict=False)
+                
+                # Verifica se o IP está no bloco de rede
+                if ip_obj in network:
+                    return True  # IP está na blacklist
+            except ValueError as e:
+                print(f"Erro ao processar o bloco {cidr_block}: {e}")
+        
+        # IP não está em nenhum dos blocos
+        return False
