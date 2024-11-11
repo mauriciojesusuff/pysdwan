@@ -29,7 +29,11 @@ logger.addHandler(handler)
 tools = Tools()
 geoIp2 = Geoip2()
 
-configs = tools.read_configuration('config.json')
+# Define o caminho para o arquivo config.json com base no diretório raiz do script
+root_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(root_dir, 'config.json')
+
+configs = tools.read_configuration(config_path)
 mikrotik = Mikrotik(
     ip=os.getenv("MK_ADDRESS"),
     user=os.getenv('MK_USERNAME'),
