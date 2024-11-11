@@ -184,9 +184,11 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         t.join()
 
     elif result['list_name'] != list_name:
-        address_list = mikrotik.get_address_list_by_address(address=network)
+        address_lists = mikrotik.get_address_list_by_address(address=network)
 
-        mikrotik.remove_ip_in_address_list(address_list[0]['.id'])
+        for address_list in address_lists:
+            mikrotik.remove_ip_in_address_list(address_list['.id'])
+
         mikrotik.add_ip_in_address_list(address=network, list_name=list_name)
 
         db.update_current_address_list(best)
