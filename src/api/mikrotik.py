@@ -29,7 +29,7 @@ class Mikrotik():
 
     #Adicionar um ip em uma lista especifica.
     def add_ip_in_address_list(self, address : str, list_name: str) -> any:
-        return self.exeCom('/ip/firewall/address-list/add =address=' + address + ' =list=' + list_name + '')
+        return self.exeCom('/ip/firewall/address-list/add =address=' + address + ' =list=' + list_name + ' =timeout=4h')
 
     #Remover um ip de uma lista especifica
     def remove_ip_in_address_list(self, id : str) -> any:
