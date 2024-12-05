@@ -4,15 +4,15 @@ services:
       context: .
     container_name: pywan
     ports:
-      - "8000:8000"  # Mapeie para a porta correta da sua aplicação
+      - "8001:8001"  # Mapeie para a porta correta da sua aplicação
     volumes:
       - .:/app
     environment:
       - PYTHONUNBUFFERED=1  # Para saída de log ao vivo
     tty: true
     networks:
-      server-network:
-        ipv4_address: 172.255.255.6
+      - server-network
+
 
 networks:
   server-network:

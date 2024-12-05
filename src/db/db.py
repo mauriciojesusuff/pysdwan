@@ -2,6 +2,12 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 
+#Importar o log para o sistema
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class Database:
     def __init__(self, host, user, passwd, database, port=3306):
         self.host = host
@@ -22,14 +28,14 @@ class Database:
                 port=self.port
             )
             if self.connection.is_connected():
-                print("Connected to MySQL database")
+                logger.debug("Conectado ao banco de dados MySql.")
         except Error as e:
-            print(f"Error connecting to MySQL: {e}")
+            logger.error(f"Erro na conexão com o MySql: {e}")
 
     def close_connection(self):
         if self.connection and self.connection.is_connected():
             self.connection.close()
-            print("MySQL connection is closed")
+            logger.debug("Conexão MySql encerrada.")
 
     def execute_query(self, query, params=None):
         """
@@ -43,7 +49,7 @@ class Database:
             self.connection.commit()
             cursor.close()
         except Error as e:
-            print(f"Error executing query: {e}")
+            logger.error(f"Erro ao executar a query: {e}")
 
     def fetch_query(self, query, params=None):
         """
@@ -96,7 +102,28 @@ class Database:
                 prefix_length TINYINT UNSIGNED,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE = InnoDB;
+            ''',
             '''
+            CREATE TABLE IF NOT EXISTS ping_target (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                domain VARCHAR(100) NOT NULL,
+                active TINYINT(1) NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE = InnoDB;
+            ''',
+            '''
+            CREATE TABLE IF NOT EXISTS ping_target_result (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ping_target_id BIGINT UNSIGNED NOT NULL,
+                latency INT,
+                success TINYINT(1) NOT NULL,
+                list_name VARCHAR(40),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ping_target_id) REFERENCES ping_target(id)
+            );
+            '''
+
         ]
         try:
             if self.connection is None or not self.connection.is_connected():
@@ -106,9 +133,10 @@ class Database:
                 cursor.execute(query)
             self.connection.commit()
             cursor.close()
-            print("Tables created or verified successfully")
+            self.close_connection()
+            logger.info("Tabelas criadas ou validadas com sucesso,")
         except Error as e:
-            print(f"Error creating tables: {e}")
+            logger.error(f"Erro ao criar as tabelas: {e}")
 
     def insert_manipulation(self, action, address, latency, operator):
         query = '''
@@ -116,6 +144,7 @@ class Database:
             VALUES (%s, %s, %s, %s)
         '''
         params = (action, address, latency, operator)
+        logger.debug(f"query: {query} params: {params}")
         self.execute_query(query, params)
 
     def select(self, limit=50, order_by='ASC'):
@@ -135,6 +164,7 @@ class Database:
                 VALUES (%s, %s, %s, %s)
             '''
             params = (list_name, gateway, address, latency)
+            logger.debug(f"query: {query} params: {params}")
             self.execute_query(query, params)
         else:
             print("Latency must be an integer")
@@ -142,6 +172,7 @@ class Database:
 
     def clear_current_address_list(self):
         query = "TRUNCATE TABLE curruent_address_list;"
+        logger.debug(query)
         self.execute_query(query)
 
     def insert_curruent_address_list(self, data):
@@ -163,11 +194,13 @@ class Database:
                     prefix_length = None
                 created_at = entry.get('creation-time', None)
                 params = (list_name, address, int(prefix_length) if prefix_length else None, created_at)
+                logger.debug(f"query: {query} params: {params}")
                 cursor.execute(query, params)
             self.connection.commit()
             cursor.close()
+            self.close_connection()
         except Error as e:
-            print(f"Failed to insert data into MySQL table: {e}")
+            logger.error(f"Erro ao inserir os dados na tabela Mysql: {e}")
 
     def get_list_name_to_current_address_list(self, address : str):
         query = '''
@@ -176,7 +209,7 @@ class Database:
         address, prefix_length = address.split('/')
         params = (address, prefix_length)
         results = self.fetch_query(query,params)
-
+        logger.debug(f"query: {query} params: {params}")
         if len(results) == 1: 
             return results[0] 
         else: None
@@ -203,8 +236,9 @@ class Database:
 
             self.connection.commit()
             cursor.close()
+            logger.debug(f"query: {query} params: {params}")
         except Error as e:
-            print(f"Failed to insert data into MySQL table: {e}")
+            logger.error(f"Erro ao inserir dados na tabela MySql: {e}")
 
     def update_current_address_list(self, entry):
         query = '''
@@ -219,6 +253,39 @@ class Database:
 
         self.connection.commit()
         cursor.close()
+        logger.debug(f"query: {query} params: {params}")
 
-    def __del__(self):
-        self.close_connection()
+
+    def insert_ping_target_test(self, id, latency, list_name, success):
+        query = '''
+                INSERT INTO ping_target_result (ping_target_id, latency, list_name, success) 
+                VALUES (%s,%s,%s,%s)
+        '''
+        try:
+            if self.connection is None or not self.connection.is_connected():
+                self.open_connection()
+
+            params = (id, latency, list_name, success)
+            logger.debug(f"query: {query} params: {params}")
+            self.execute_query(query, params)
+
+        except Error as e:
+            logger.error(f"Erro ao inserir ping_target_result: {e}")
+
+
+    def get_ping_target(self):
+        query = '''
+            SELECT id, domain FROM ping_target WHERE active = 1
+        '''
+        try:
+            if self.connection is None or not self.connection.is_connected():
+                self.open_connection()
+
+            logger.debug(f"query: {query} params: {None}")
+            results = self.fetch_query(query)
+            return results
+        except Error as e:
+            logger.error(f"Erro ao selecionar ping_target: {e}")
+
+
+

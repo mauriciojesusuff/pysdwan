@@ -6,7 +6,6 @@ from src.db.db import Database
 from dotenv import load_dotenv
 import os
 import time
-import threading
 from typing import List
 
 # Importar módulos de logging
@@ -17,13 +16,13 @@ from logging.handlers import RotatingFileHandler
 load_dotenv()
 
 # Configurar o logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Criar um handler com um limite de aproximadamente 1k linhas
-handler = RotatingFileHandler('app.log', maxBytes=100000, backupCount=1)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler = RotatingFileHandler('app.log', maxBytes=1000000, backupCount=1)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 handler.setFormatter(formatter)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 
 tools = Tools()
@@ -79,6 +78,8 @@ logger.info("Sessão GeoIP2 aberta.")
 # Conjunto para armazenar os blocos IP já vistos
 seen_ip_blocks = {}
 
+#Abrir uma nova conexão com o banco de dados
+
 index = 0
 for address_info in connections_address:
     # Extrair o endereço IP (removendo a porta, se houver)
@@ -120,6 +121,8 @@ logger.info(f"Total de blocos IP únicos processados: {len(seen_ip_blocks)} em {
 
 total_blocks = len(seen_ip_blocks)
 
+db.open_connection()
+
 for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
     latency_tests = []
 
@@ -143,9 +146,7 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
             'address': address
         })
 
-        t = threading.Thread(target=db.insert_ping_test, args=(list_name, gateway, address, ping))
-        t.start()
-        t.join()
+        db.insert_ping_test(list_name, gateway, address, ping)
 
     if not latency_tests:
         continue
@@ -179,9 +180,7 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
 
         db.insert_one_current_address_list(best)
 
-        t = threading.Thread(target=db.insert_manipulation, args=("ADDED", network, ping, list_name))
-        t.start()
-        t.join()
+        db.insert_manipulation("ADDED", network, ping, list_name)
 
     elif result['list_name'] != list_name:
         address_lists = mikrotik.get_address_list_by_address(address=network)
@@ -192,9 +191,8 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         mikrotik.add_ip_in_address_list(address=network, list_name=list_name)
 
         db.update_current_address_list(best)
-
-        t = threading.Thread(target=db.insert_manipulation, args=("REMOVED", network, None, list_name))
-        t.start()
-        t.join()
+        db.insert_manipulation('REMOVED', network, None, list_name)
 
         logger.info(f"Rota de {best['network']} trocada para {list_name}.")
+
+db.close_connection()
