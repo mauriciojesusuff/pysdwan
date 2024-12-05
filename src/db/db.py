@@ -143,9 +143,14 @@ class Database:
             INSERT INTO manipulation (action, address, latency, operator)
             VALUES (%s, %s, %s, %s)
         '''
-        params = (action, address, latency, operator)
-        logger.debug(f"query: {query} params: {params}")
-        self.execute_query(query, params)
+        try:
+            if self.connection is None or not self.connection.is_connected():
+                self.open_connection()
+            params = (action, address, latency, operator)
+            logger.debug(f"query: {query} params: {params}")
+            self.execute_query(query, params)
+        except Error as e:
+                logger.error(f"Erro ao inserir os dados na tabela Mysql: {e}")
 
     def select(self, limit=50, order_by='ASC'):
         query = f'''
@@ -160,14 +165,20 @@ class Database:
     def insert_ping_test(self, list_name, gateway, address, latency):
         if isinstance(latency, int):
             query = '''
-                INSERT INTO ping (list_name, gateway, address, latency)
-                VALUES (%s, %s, %s, %s)
-            '''
-            params = (list_name, gateway, address, latency)
-            logger.debug(f"query: {query} params: {params}")
-            self.execute_query(query, params)
+                    INSERT INTO ping (list_name, gateway, address, latency)
+                    VALUES (%s, %s, %s, %s)
+                '''
+            try:
+                if self.connection is None or not self.connection.is_connected():
+                    self.open_connection()
+
+                params = (list_name, gateway, address, latency)
+                logger.debug(f"query: {query} params: {params}")
+                self.execute_query(query, params)
+            except Error as e:
+                logger.error(f"Erro ao inserir os dados na tabela Mysql: {e}")
         else:
-            print("Latency must be an integer")
+                print("Latency must be an integer")
 
 
     def clear_current_address_list(self):
@@ -206,13 +217,20 @@ class Database:
         query = '''
             SELECT id, list_name FROM curruent_address_list WHERE address = INET6_ATON(%s) AND prefix_length = %s;
         '''
-        address, prefix_length = address.split('/')
-        params = (address, prefix_length)
-        results = self.fetch_query(query,params)
-        logger.debug(f"query: {query} params: {params}")
-        if len(results) == 1: 
-            return results[0] 
-        else: None
+        try:
+            if self.connection is None or not self.connection.is_connected():
+                self.open_connection()
+
+            address, prefix_length = address.split('/')
+            params = (address, prefix_length)
+            results = self.fetch_query(query,params)
+            logger.debug(f"query: {query} params: {params}")
+            if len(results) == 1: 
+                return results[0] 
+            else: None
+
+        except Error as e:
+            logger.error(f"Erro ao selecionar dados na tabela MySql: {e}")
 
     def insert_one_current_address_list(self, entry):
         query = '''
@@ -241,19 +259,24 @@ class Database:
             logger.error(f"Erro ao inserir dados na tabela MySql: {e}")
 
     def update_current_address_list(self, entry):
+    
         query = '''
             UPDATE curruent_address_list SET list_name = %s WHERE address = INET6_ATON(%s) AND prefix_length = %s
         '''
+        try:
+            if self.connection is None or not self.connection.is_connected():
+                self.open_connection()
+            address, prefix_length = entry['network'].split('/')
+            params = (entry['list_name'],address, prefix_length)
 
-        address, prefix_length = entry['network'].split('/')
-        params = (entry['list_name'],address, prefix_length)
+            cursor = self.connection.cursor()
+            cursor.execute(query, params)
 
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-
-        self.connection.commit()
-        cursor.close()
-        logger.debug(f"query: {query} params: {params}")
+            self.connection.commit()
+            cursor.close()
+            logger.debug(f"query: {query} params: {params}")
+        except Error as e:
+            logger.error(f"Erro ao atualizar curruent_address_list: {e}")
 
 
     def insert_ping_target_test(self, id, latency, list_name, success):
