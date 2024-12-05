@@ -32,10 +32,10 @@ class Database:
         except Error as e:
             logger.error(f"Erro na conexão com o MySql: {e}")
 
-    def close_connection(self):
-        if self.connection and self.connection.is_connected():
-            self.connection.close()
-            logger.debug("Conexão MySql encerrada.")
+#    def close_connection(self):
+#        if self.connection and self.connection.is_connected():
+#            self.connection.close()
+#            logger.debug("Conexão MySql encerrada.")
 
     def execute_query(self, query, params=None):
         """
@@ -133,7 +133,6 @@ class Database:
                 cursor.execute(query)
             self.connection.commit()
             cursor.close()
-            self.close_connection()
             logger.info("Tabelas criadas ou validadas com sucesso,")
         except Error as e:
             logger.error(f"Erro ao criar as tabelas: {e}")
@@ -209,7 +208,6 @@ class Database:
                 cursor.execute(query, params)
             self.connection.commit()
             cursor.close()
-            self.close_connection()
         except Error as e:
             logger.error(f"Erro ao inserir os dados na tabela Mysql: {e}")
 

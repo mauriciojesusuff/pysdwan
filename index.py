@@ -16,7 +16,7 @@ from logging.handlers import RotatingFileHandler
 load_dotenv()
 
 # Configurar o logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 # Criar um handler com um limite de aproximadamente 1k linhas
 handler = RotatingFileHandler('app.log', maxBytes=1000000, backupCount=1)
@@ -194,5 +194,3 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         db.insert_manipulation('REMOVED', network, None, list_name)
 
         logger.info(f"Rota de {best['network']} trocada para {list_name}.")
-
-db.close_connection()
