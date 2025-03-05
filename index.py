@@ -64,7 +64,7 @@ list_address_mapped = [operadora["list_name"] for operadora in operators]
 address_list = mikrotik.get_address_list(list_address_mapped)
 logger.info("Lista de endereços obtida do Mikrotik.")
 
-db.insert_curruent_address_list(address_list)
+db.insert_current_address_list(address_list)
 logger.info("Lista de endereços atual inserida no banco de dados.")
 
 # Pegar todos os IPs do firewall/connections
@@ -176,11 +176,11 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
 
     if result is None:
         mikrotik.add_ip_in_address_list(address=network, list_name=list_name)
-        logger.info(f"Nova rota adicionada: {best['network']} - {list_name}")
 
         db.insert_one_current_address_list(best)
-
         db.insert_manipulation("ADDED", network, ping, list_name)
+
+        logger.info(f">> Nova rota adicionada: {best['network']} - {list_name}")
 
     elif result['list_name'] != list_name:
         address_lists = mikrotik.get_address_list_by_address(address=network)
@@ -193,4 +193,4 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         db.update_current_address_list(best)
         db.insert_manipulation('REMOVED', network, None, list_name)
 
-        logger.info(f"Rota de {best['network']} trocada para {list_name}.")
+        logger.info(f">> Rota de {best['network']} trocada para {list_name}.")
