@@ -45,11 +45,15 @@ class Database:
             if self.connection is None or not self.connection.is_connected():
                 self.open_connection()
             cursor = self.connection.cursor()
-            cursor.execute(query, params)
-            self.connection.commit()
-            cursor.close()
+            try:
+                cursor.execute(query, params)
+                self.connection.commit()
+            finally:
+                cursor.close()
         except Error as e:
             logger.error(f"Erro ao executar a query: {e}")
+            self.connection.rollback()  # se aplicável
+            raise
 
     def fetch_query(self, query, params=None):
         """
@@ -121,6 +125,14 @@ class Database:
                 list_name VARCHAR(40),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (ping_target_id) REFERENCES ping_target(id)
+            );
+            ''',
+                        '''
+            CREATE TABLE IF NOT EXISTS system_efficiency (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                qtt_ip INT UNSIGNED NOT NULL,
+                seconds INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             '''
 
@@ -269,12 +281,18 @@ class Database:
     def update_current_address_list(self, entry):
     
         query = '''
-            UPDATE current_address_list SET list_name = %s WHERE address = INET6_ATON(%s) AND prefix_length = %s
+            UPDATE current_address_list SET list_name = %s WHERE address = %s AND prefix_length = %s
         '''
         try:
             if self.connection is None or not self.connection.is_connected():
                 self.open_connection()
-            address, prefix_length = entry['network'].split('/')
+
+            #address, prefix_length = entry['network'].split('/')
+
+            parts = entry['network'].split('/')
+            address = parts[0] if len(parts) > 0 else None
+            prefix_length = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
+
             params = (entry['list_name'],address, prefix_length)
 
             cursor = self.connection.cursor()

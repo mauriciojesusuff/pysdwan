@@ -194,3 +194,5 @@ for index, (block, address) in enumerate(seen_ip_blocks.items(), start=1):
         db.insert_manipulation('REMOVED', network, None, list_name)
 
         logger.info(f">> Rota de {best['network']} trocada para {list_name}.")
+    else:
+        logger.info('Melhor rota já selecionada.')
