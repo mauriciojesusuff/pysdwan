@@ -207,6 +207,7 @@ class Database:
                 self.open_connection()
             cursor = self.connection.cursor()
             for entry in data:
+                if not entry: continue
                 list_name = entry['list']
                 address_full = entry['address']
                 if '/' in address_full:
